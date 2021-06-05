@@ -1,0 +1,32 @@
+ZSH_THEME="robbyrussell"
+
+plugins=(git zsh-autosuggestions)
+
+source $ZSH/oh-my-zsh.sh
+
+export CDPATH=.:${HOME}:${HOME}/Workspaces
+
+gfind() {
+    git branch --all | grep "$1"
+}
+
+gacp() {
+    git add -A
+    git commit -m "$1"
+    git push
+}
+
+ghpr() {
+    git add -A
+    git commit -m "$1"
+    git push
+    gh pr create -f
+    gh pr view --web
+}
+
+alias c="code ${@:-.}"
+
+alias ys="yarn start"
+
+alias gf="git fetch --all --prune"
+
