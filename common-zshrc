@@ -4,13 +4,19 @@ plugins=(git zsh-autosuggestions)
 
 source $ZSH/oh-my-zsh.sh
 
-export CDPATH=.:${HOME}:${HOME}/Workspaces
+export CDPATH=.:${HOME}:${HOME}/Workspace
 
 gfind() {
     git branch --all | grep "$1"
 }
 
 gacp() {
+    git add -A
+    git commit -m "$1"
+    git push
+}
+
+gcom() {
     git add -A
     git commit -m "$1"
     git push
@@ -24,9 +30,34 @@ ghpr() {
     gh pr view --web
 }
 
+gmain() {
+    MAIN_BRANCH=`git remote show origin | sed -n '/HEAD branch/s/.*: //p'`
+    git checkout $MAIN_BRANCH
+    git pull
+}
+
+gstep() {
+    defaultEmail="hello@balavishnuvj.com"
+    email="${1:-$defaultEmail}"
+    git config user.name "Balavishnu V J"
+    git config user.email $email
+    echo "GIT set for $(git config user.name)<$(git config user.email)>"
+}
+
+rmr() {
+    find . -name "$1" -type d -prune -exec rm -rf '{}' +
+}
+
+gclone(){
+    git clone git@github.com-p:"$1"
+}
+
 alias c="code ${@:-.}"
 
+alias y="yarn"
 alias ys="yarn start"
 
 alias gf="git fetch --all --prune"
+alias gcb="git checkout -b"
+alias gs="git status"
 
