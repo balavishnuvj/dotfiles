@@ -10,6 +10,12 @@ gfind() {
     git branch --all | grep "$1"
 }
 
+
+glast() {
+    defaultLimit="5"
+    git reflog | egrep -io "moving from ([^[:space:]]+)" | awk '{ print $3 }' | awk ' !x[$0]++' | egrep -v '^[a-f0-9]{40}$' | head -n"${1:-$defaultLimit}"
+}
+
 gacp() {
     git add -A
     git commit -m "$1"
@@ -19,7 +25,6 @@ gacp() {
 gcom() {
     git add -A
     git commit -m "$1"
-    git push
 }
 
 ghpr() {
@@ -60,4 +65,5 @@ alias ys="yarn start"
 alias gf="git fetch --all --prune"
 alias gcb="git checkout -b"
 alias gs="git status"
+alias glog="git log --decorate --graph --oneline"
 
