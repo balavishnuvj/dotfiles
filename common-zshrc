@@ -36,12 +36,13 @@ ghpr() {
 }
 
 gmain() {
+    git fetch --all --prune
     MAIN_BRANCH=`git remote show origin | sed -n '/HEAD branch/s/.*: //p'`
     git checkout $MAIN_BRANCH
     git pull
 }
 
-gstep() {
+gsetup() {
     defaultEmail="hello@balavishnuvj.com"
     email="${1:-$defaultEmail}"
     git config user.name "Balavishnu V J"
@@ -57,6 +58,12 @@ gclone(){
     git clone git@github.com-p:"$1"
 }
 
+gclear(){
+    git reset
+    git checkout .
+    git clean -f
+}
+
 alias c="code ${@:-.}"
 
 alias y="yarn"
@@ -66,4 +73,4 @@ alias gf="git fetch --all --prune"
 alias gcb="git checkout -b"
 alias gs="git status"
 alias glog="git log --decorate --graph --oneline"
-
+alias gundo="git reset --soft HEAD~1"
