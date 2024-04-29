@@ -10,7 +10,6 @@ gfind() {
     git branch --all | grep "$1"
 }
 
-
 glast() {
     defaultLimit="5"
     git reflog | egrep -io "moving from ([^[:space:]]+)" | awk '{ print $3 }' | awk ' !x[$0]++' | egrep -v '^[a-f0-9]{40}$' | head -n"${1:-$defaultLimit}"
@@ -27,17 +26,45 @@ gcom() {
     git commit -m "$1"
 }
 
+gmr() {
+    echo "Pushing to remote..."
+    git push
+    [[ -z "$2" ]] && {
+        echo "Parameter 1 is empty"
+        exit 0
+    }
+    echo "Creating PR..."
+    gh pr create -t "$1" -b "$2"
+    gh pr view --web
+}
+
 ghpr() {
+    num_files=$(git diff --name-only | wc -l)
+    read "?Are you sure you want to commit $num_files files? (y/n) " confirm
+    if [[ $confirm != "y" ]]; then
+        echo "Commit canceled."
+        return
+    fi
+    echo "Committing $num_files files..."
     git add -A
     git commit -m "$1"
+    gmr "$1" "$2"
+}
+
+gcph() {
+    git commit -m "$1"
     git push
-    gh pr create -f
+    [[ -z "$2" ]] && {
+        echo "Parameter 1 is empty"
+        exit 1
+    }
+    gh pr create -t "$1" -b "$2"
     gh pr view --web
 }
 
 gmain() {
     git fetch --all --prune
-    MAIN_BRANCH=`git remote show origin | sed -n '/HEAD branch/s/.*: //p'`
+    MAIN_BRANCH=$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')
     git checkout $MAIN_BRANCH
     git pull
 }
@@ -54,14 +81,64 @@ rmr() {
     find . -name "$1" -type d -prune -exec rm -rf '{}' +
 }
 
-gclone(){
+gclone() {
     git clone git@github.com-p:"$1"
 }
 
-gclear(){
+gnuke() {
     git reset
     git checkout .
-    git clean -f
+    git clean -df
+}
+
+function get_default_branch {
+    # Get the name of the default branch for the remote repository
+    DEFAULT_BRANCH=$(git remote show origin | grep "HEAD branch" | cut -d ":" -f 2 | tr -d '[:space:]')
+
+    echo "$DEFAULT_BRANCH"
+}
+
+function has_uncommitted_changes {
+    # Check if there are any uncommitted changes
+    if [[ -n $(git status --porcelain) ]]; then
+        echo "Error: There are uncommitted changes in the current branch."
+        echo "Please commit or stash your changes before running 'git sync'."
+        return 0
+    else
+        return 1
+    fi
+}
+
+function gsync {
+    # Check for uncommitted changes
+    if has_uncommitted_changes; then
+        return 1
+    fi
+
+    # Get the name of the current branch
+    CURRENT_BRANCH=$(git branch --show-current)
+
+    # Get the name of the default branch for the remote repository
+    DEFAULT_BRANCH=$(get_default_branch)
+
+    # Fetch the latest changes from the remote repository
+    echo "Fetching the latest changes from the remote repository..."
+    git fetch
+
+    # Switch to the default branch
+    git checkout $DEFAULT_BRANCH
+
+    # Pull the latest changes from the default branch
+    echo "Pulling the latest changes from the default branch..."
+    git pull
+
+    # Switch back to the original branch
+    git checkout $CURRENT_BRANCH
+
+    # Merge the latest changes from the $DEFAULT_BRANCH into the original branch
+    echo "Merging the latest changes from the $DEFAULT_BRANCH into the $CURRENT_BRANCH..."
+    git merge $DEFAULT_BRANCH
+    git push
 }
 
 alias c="code ${@:-.}"
@@ -74,3 +151,4 @@ alias gcb="git checkout -b"
 alias gs="git status"
 alias glog="git log --decorate --graph --oneline"
 alias gundo="git reset --soft HEAD~1"
+alias gtag='git log --pretty=format:"%h - v%s - *%an* - %s" --decorate=short --format="%Cred %D - %Cgreen %an %Creset - %s" --abbrev=0 $1...$2 main'
